@@ -100,6 +100,8 @@ pub struct HeadlessScenario {
     /// resources - no independently swappable execution inputs remain.
     pub runtime: crate::sim::runtime::SimRuntime,
     pub map: MapFile,
+    /// Native post-map camera selection, retained for CPU presentation.
+    pub opening_view_cell: Option<(u16, u16)>,
 }
 
 impl HeadlessScenario {
@@ -188,7 +190,26 @@ pub fn load_with_launch_and_ini(
     launch: crate::sim::scenario_bootstrap::MatchLaunchDescriptor,
     ini: &crate::util::ini_roots::IniRootConfig,
 ) -> Result<HeadlessScenario, String> {
-    let mut assets = AssetManager::new(retail_dir, MediaArchiveMode::STOCK_DIGITAL)
+    load_with_launch_and_media(
+        retail_dir,
+        map_file_name,
+        seed,
+        launch,
+        ini,
+        MediaArchiveMode::STOCK_DIGITAL,
+    )
+}
+
+/// Explicit media scope for multiplayer-only installations.
+pub fn load_with_launch_and_media(
+    retail_dir: &Path,
+    map_file_name: &str,
+    seed: u32,
+    launch: crate::sim::scenario_bootstrap::MatchLaunchDescriptor,
+    ini: &crate::util::ini_roots::IniRootConfig,
+    media: MediaArchiveMode,
+) -> Result<HeadlessScenario, String> {
+    let mut assets = AssetManager::new(retail_dir, media)
         .and_then(|assets| assets.with_ini_roots(ini))
         .map_err(|error| {
             format!(
@@ -442,15 +463,17 @@ pub fn load_with_launch_and_ini(
         return Err("headless post-map navigation is unavailable".to_string());
     }
     sim.session.publish_started();
+    // Match the client's path-search and targeting execution lanes.
     sim.batch_path_searches();
     sim.batch_target_scans();
     sim.hash_state_every(crate::sim::replay::PLAY_HASH_INTERVAL);
     Ok(HeadlessScenario {
+        opening_view_cell: post_map.opening_view_cell,
         runtime: crate::sim::runtime::SimRuntime {
             simulation: sim,
             resources: crate::sim::runtime::SimResources {
                 overlay_registry,
-                terrain_template: None,
+                terrain_template: Some(resolved_terrain),
                 rules,
             },
         },

@@ -38,6 +38,7 @@ pub mod net;
 // Shared utilities — config, fixed-point math, color helpers.
 pub mod util;
 
+pub mod agent_env;
 /// Headless retail-scenario loading for parity runs (no GPU, no window).
 pub mod headless_scenario;
 

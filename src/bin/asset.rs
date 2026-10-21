@@ -55,15 +55,20 @@ fn run(cli: Cli) -> Result<(), ErrorReport> {
     log::info!("retail root {} (from {source:?})", ra2_dir.display());
 
     let source_only = matches!(cli.verb, Verb::IniExpand { .. }) && cli.ini_source_only;
+    let media = if cli.multiplayer {
+        vera20k::assets::asset_manager::MediaArchiveMode::Multiplayer
+    } else {
+        vera20k::assets::asset_manager::MediaArchiveMode::STOCK_DIGITAL
+    };
     let manager = if source_only {
         root::open_ini_probe_manager(&ra2_dir, cli.all_mixes)
     } else if matches!(
         cli.verb,
         Verb::IniGet { .. } | Verb::IniType { .. } | Verb::IniRoots
     ) {
-        root::open_ini_manager(&ra2_dir, cli.all_mixes, cli.ini_roots.as_ref())
+        root::open_ini_manager(&ra2_dir, cli.all_mixes, cli.ini_roots.as_ref(), media)
     } else {
-        root::open_manager(&ra2_dir, cli.all_mixes)
+        root::open_manager(&ra2_dir, cli.all_mixes, media)
     };
     let mut manager = manager.map_err(|error| ErrorReport {
         error,

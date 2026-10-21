@@ -51,6 +51,7 @@ pub enum Verb {
 pub struct Cli {
     pub ra2_dir: Option<PathBuf>,
     pub all_mixes: bool,
+    pub multiplayer: bool,
     pub verb: Verb,
     pub find: FindOptions,
     pub ls: LsOptions,
@@ -80,6 +81,7 @@ asset — headless browser for retail RA2/YR assets. Output is JSON on stdout.
 
 USAGE
   asset <verb> [target] [options]
+  --multiplayer       Use XWIS multiplayer assets without campaign movie archives.
 
 VERBS
   ini-get <SECTION> <KEY>  Inspect exact authored values and a production INI accessor.
@@ -221,6 +223,7 @@ pub fn parse<I: IntoIterator<Item = String>>(argv: I) -> Result<Cli, String> {
     let mut cli = Cli {
         ra2_dir: None,
         all_mixes: false,
+        multiplayer: false,
         verb: Verb::Help,
         find: FindOptions::default(),
         ls: LsOptions::default(),
@@ -333,6 +336,7 @@ pub fn parse<I: IntoIterator<Item = String>>(argv: I) -> Result<Cli, String> {
             && !matches!(
                 flag.as_str(),
                 "--ra2-dir"
+                    | "--multiplayer"
                     | "--all-mixes"
                     | "--ini-profile"
                     | "--rules-ini"
@@ -348,6 +352,7 @@ pub fn parse<I: IntoIterator<Item = String>>(argv: I) -> Result<Cli, String> {
             && !matches!(
                 flag.as_str(),
                 "--ra2-dir"
+                    | "--multiplayer"
                     | "--all-mixes"
                     | "--strict"
                     | "--max-depth"
@@ -362,6 +367,7 @@ pub fn parse<I: IntoIterator<Item = String>>(argv: I) -> Result<Cli, String> {
             && !matches!(
                 flag.as_str(),
                 "--ra2-dir"
+                    | "--multiplayer"
                     | "--ini-profile"
                     | "--rules-ini"
                     | "--art-ini"
@@ -381,7 +387,7 @@ pub fn parse<I: IntoIterator<Item = String>>(argv: I) -> Result<Cli, String> {
         if matches!(cli.verb, Verb::CorpusBaseline)
             && !matches!(
                 flag.as_str(),
-                "--all-mixes" | "--ra2-dir" | "--out" | "-h" | "--help"
+                "--all-mixes" | "--ra2-dir" | "--multiplayer" | "--out" | "-h" | "--help"
             )
         {
             return Err(flag_not_valid(&flag, &cli.verb));
@@ -391,6 +397,7 @@ pub fn parse<I: IntoIterator<Item = String>>(argv: I) -> Result<Cli, String> {
                 cli.verb = Verb::Help;
                 return Ok(cli);
             }
+            "--multiplayer" => cli.multiplayer = true,
             "--ra2-dir" => cli.ra2_dir = Some(PathBuf::from(value(&mut args, "--ra2-dir")?)),
             "--all-mixes" => cli.all_mixes = true,
             "--ini-profile" | "--rules-ini" | "--art-ini" | "--ai-ini" => {
@@ -576,6 +583,9 @@ pub fn parse<I: IntoIterator<Item = String>>(argv: I) -> Result<Cli, String> {
             );
         }
     }
+    if cli.multiplayer && cli.ini_source_only {
+        return Err("--multiplayer cannot be combined with --source-only".into());
+    }
     if let Some(config) = &cli.ini_roots {
         config.validate()?;
     }
@@ -642,6 +652,9 @@ mod tests {
     fn ini_roots_cli_keeps_profile_choice_whole_and_rejects_other_verbs() {
         let auto = parse(args(&["ini-roots", "--ini-profile", "auto", "--all-mixes"])).unwrap();
         assert!(matches!(auto.verb, Verb::IniRoots));
+        let multiplayer =
+            parse(args(&["ini-roots", "--multiplayer", "--ini-profile", "yr"])).unwrap();
+        assert!(multiplayer.multiplayer);
         assert_eq!(
             auto.ini_roots.unwrap().profile,
             crate::util::ini_roots::IniProfile::Auto

@@ -186,6 +186,7 @@ fn campaign_scene() -> HeadlessScenario {
     sim.session.publish_started();
     sim.hash_state_every(std::num::NonZeroU64::new(10_000).unwrap());
     HeadlessScenario {
+        opening_view_cell: None,
         runtime: crate::sim::runtime::SimRuntime {
             simulation: sim,
             resources: crate::sim::runtime::SimResources {

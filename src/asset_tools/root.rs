@@ -55,20 +55,22 @@ fn check(dir: PathBuf, source: RootSource) -> Result<(PathBuf, RootSource), Stri
 
 /// Build the archive stack.
 ///
-/// Pins the stock numbered archive policy. Command arguments and paths cannot
-/// change media selection.
+/// The caller resolves the media policy explicitly. Paths do not change it.
 ///
 /// `all_mixes` additionally mounts archives the startup path skips. It is a
 /// tooling-only widening of the search set, so results found only that way are
 /// not what the game would resolve.
-pub fn open_manager(ra2_dir: &Path, all_mixes: bool) -> Result<AssetManager, String> {
-    let mut manager =
-        AssetManager::new(ra2_dir, MediaArchiveMode::STOCK_DIGITAL).map_err(|err| {
-            format!(
-                "could not mount archives under {}: {err}",
-                ra2_dir.display()
-            )
-        })?;
+pub fn open_manager(
+    ra2_dir: &Path,
+    all_mixes: bool,
+    media: MediaArchiveMode,
+) -> Result<AssetManager, String> {
+    let mut manager = AssetManager::new(ra2_dir, media).map_err(|err| {
+        format!(
+            "could not mount archives under {}: {err}",
+            ra2_dir.display()
+        )
+    })?;
 
     if all_mixes {
         manager
@@ -85,6 +87,7 @@ pub fn open_ini_manager(
     root: &Path,
     all_mixes: bool,
     explicit: Option<&crate::util::ini_roots::IniRootConfig>,
+    media: MediaArchiveMode,
 ) -> Result<AssetManager, String> {
     let config = match explicit {
         Some(config) => config.clone(),
@@ -95,7 +98,7 @@ pub fn open_ini_manager(
         }
     };
     config.validate()?;
-    open_manager(root, all_mixes)?
+    open_manager(root, all_mixes, media)?
         .with_ini_roots(&config)
         .map_err(|error| error.to_string())
 }

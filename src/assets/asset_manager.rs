@@ -139,13 +139,15 @@ struct SelectedAudioPair {
     bag: Option<SelectedAudioFile>,
 }
 
-/// The media-pack branch selected by active `Init_Mix_Files @ 0x00530460`.
+/// Media policy. Numbered and wildcard modes follow `Init_Mix_Files @ 0x00530460`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MediaArchiveMode {
     /// Normal startup uses the current media index plus one in `%02d` names.
     Numbered { media_index: i32 },
     /// Retail's `-CD` switch selects the wildcard-enumeration branch.
     CdWildcard,
+    /// XWIS multiplayer assets: numbered maps, no campaign movie archives.
+    Multiplayer,
 }
 
 impl MediaArchiveMode {
@@ -922,6 +924,9 @@ impl AssetManager {
                 self.mount_named_archive(&format!("mapsmd{number:02}.mix"), true)?;
                 self.mount_named_archive(&format!("maps{number:02}.mix"), false)?;
             }
+            MediaArchiveMode::Multiplayer => {
+                self.mount_named_archive("mapsmd03.mix", true)?;
+            }
             MediaArchiveMode::CdWildcard => {
                 let md = self.mount_wildcard_archives(None, "mapsmd")?;
                 if !md.matched {
@@ -947,6 +952,7 @@ impl AssetManager {
                     self.mount_named_archive(&format!("movies{number:02}.mix"), true)?;
                 }
             }
+            MediaArchiveMode::Multiplayer => {}
             MediaArchiveMode::CdWildcard => {
                 // Retail starts with root MOVMD, then each successful raw-file
                 // probe overwrites the selected wildcard in this exact order.
@@ -1629,6 +1635,18 @@ mod tests {
             .expect("sticky fallback");
         assert_eq!(&*cached.bytes, b"archived");
         assert_eq!(&*cached.source_archive, "first.mix");
+    }
+
+    /// Long-lived assets contract: multiplayer omits movies but still requires maps.
+    #[test]
+    fn multiplayer_media_requires_game_and_map_archives() {
+        let directory = audio_test_install("multiplayer-media");
+        std::fs::remove_file(directory.path().join("movmd03.mix")).unwrap();
+        AssetManager::new(directory.path(), MediaArchiveMode::Multiplayer)
+            .expect("multiplayer assets");
+        assert!(AssetManager::new(directory.path(), MediaArchiveMode::STOCK_DIGITAL).is_err());
+        std::fs::remove_file(directory.path().join("mapsmd03.mix")).unwrap();
+        assert!(AssetManager::new(directory.path(), MediaArchiveMode::Multiplayer).is_err());
     }
 
     #[test]
