@@ -2,6 +2,7 @@
 
 use super::*;
 
+#[derive(Clone)]
 pub struct CommandBarArt<T> {
     pub spacer: Option<T>,
     pub left_cap: [Option<T>; 3],

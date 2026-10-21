@@ -26,6 +26,7 @@ pub struct BridgeAtlasKey {
     pub kind: BridgeFrameKind,
 }
 
+#[derive(Clone)]
 pub struct BridgeAtlas {
     pub texture: BatchTexture,
     entries: HashMap<BridgeAtlasKey, OverlaySpriteEntry>,

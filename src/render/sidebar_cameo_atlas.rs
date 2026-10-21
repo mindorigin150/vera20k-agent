@@ -30,6 +30,7 @@ pub struct SidebarCameoEntry {
     pub crop_origin: [f32; 2],
 }
 
+#[derive(Clone)]
 pub struct SidebarCameoAtlas {
     pub texture: BatchTexture,
     entries: HashMap<String, SidebarCameoEntry>,

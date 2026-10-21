@@ -2350,3 +2350,60 @@ fn gamemd_ftol_positive_domain(value: f64) -> i32 {
     // Exact fractional x87 control-word behavior remains a narrow follow-up.
     value as i32
 }
+
+/// Use the production loader with an explicit episode seed and no loading-screen presents.
+pub(crate) fn load_offscreen_episode(
+    state: &mut AppState,
+    session: crate::skirmish_launch::SkirmishLaunchSession,
+    seed: crate::app::match_bootstrap::MatchSeed,
+) -> anyhow::Result<()> {
+    let root = state
+        .platform
+        .game_config
+        .as_ref()
+        .expect("explicit offscreen configuration")
+        .paths
+        .ra2_dir
+        .clone();
+    let mut assets = state
+        .process_assets
+        .lease_for_loading()
+        .ok_or_else(|| anyhow::anyhow!("asset manager is unavailable"))?;
+    let result = (|| {
+        let request = LoadingRequest::unverified_legacy_skirmish(session, seed);
+        let prepared = request.prepare(
+            root,
+            &mut assets,
+            state.process_assets.native_rules(),
+            &mut state.frontend.random_map_retention,
+            None,
+            &mut NoopProgressSink,
+        )?;
+        let shared_dummy = state.process_assets.shared_cell_dummy.clone();
+        let (rules, cache, audio) = state.process_assets.native_rules_mut_with_tile_cache();
+        init::load_map_from_initial(
+            &state.renderer.gpu,
+            &state.renderer.batch_renderer,
+            &mut assets,
+            prepared.initial,
+            prepared.request.startup,
+            prepared.context,
+            true,
+            0,
+            rules.ok_or_else(|| anyhow::anyhow!("native rules are unavailable"))?,
+            audio,
+            shared_dummy,
+            cache,
+            &mut NoopProgressSink,
+        )
+    })();
+    state.process_assets.return_from_loading(assets);
+    let result = result?;
+    state.frontend.screen = GameScreen::Loading;
+    super::transitions::apply_map_load_result(state, result);
+    anyhow::ensure!(
+        state.frontend.screen == GameScreen::InGame,
+        "offscreen scenario installation failed"
+    );
+    Ok(())
+}

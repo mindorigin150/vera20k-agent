@@ -37,6 +37,7 @@ pub const PALETTE_ENTRIES: u32 = 256;
 pub const RAMP_SIZE: u32 = 16;
 
 /// GPU resources for voxel sprite color resolution.
+#[derive(Clone)]
 pub struct PaletteSet {
     /// 256×2 Rgba8UnormSrgb texture: row 0 is the theater palette, row 1
     /// is the native global UNITSNO.PAL Convert palette (without house remap).

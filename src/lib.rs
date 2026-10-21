@@ -9,7 +9,8 @@
 //! re-exported here, so `crate::sim::...` and `vera20k::sim::...` keep naming
 //! them.
 pub use vera20k_core::{
-    assets, headless_scenario, map, net, rules, sim, skirmish_launch, skirmish_modes, util,
+    agent_env, assets, headless_scenario, map, net, rules, sim, skirmish_launch, skirmish_modes,
+    util,
 };
 
 // Cargo unifies dependency features across a workspace. Refuse a client built

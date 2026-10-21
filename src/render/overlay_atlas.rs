@@ -396,6 +396,7 @@ pub struct OverlaySpriteEntry {
 }
 
 /// A GPU texture atlas containing pre-rendered overlay sprites.
+#[derive(Clone)]
 pub struct OverlayAtlas {
     /// The packed GPU texture.
     pub texture: BatchTexture,

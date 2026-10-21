@@ -27,7 +27,7 @@ pub(super) fn render_dimensions(
 /// This state is process-local: it is never serialized, hashed, or read by the
 /// deterministic simulation.
 pub(crate) struct PlatformState {
-    pub(crate) window: Arc<Window>,
+    pub(crate) window: DisplayWindow,
     /// Whether the OS cursor is clipped to the window rectangle
     /// edge-scroll lock), so it cannot leave the game while the player scrolls
     /// the map. On by default, by default; the cursor-lock hotkey flips it,
@@ -98,7 +98,7 @@ pub(crate) struct PlatformState {
 
 impl PlatformState {
     pub(crate) fn new(
-        window: Arc<Window>,
+        window: Option<Arc<Window>>,
         game_config: Option<crate::util::config::GameConfig>,
         capture_client_size: Option<PhysicalSize<u32>>,
     ) -> Self {
@@ -106,7 +106,7 @@ impl PlatformState {
             .as_ref()
             .is_some_and(|config| config.gameplay.pause_on_focus_loss);
         Self {
-            window,
+            window: DisplayWindow(window),
             cursor_confined: true,
             pointer_held: std::cell::Cell::new(false),
             pointer_in_client: true,
@@ -131,5 +131,26 @@ impl PlatformState {
     /// [`Self::window_active`] alone.
     pub(crate) fn focus_freeze_active(&self) -> bool {
         self.pause_on_focus_loss && !self.window_active
+    }
+}
+
+/// Display operations are available only for window-backed applications.
+/// Offscreen rendering can request a redraw without scheduling an OS event.
+pub(crate) struct DisplayWindow(Option<Arc<Window>>);
+
+impl DisplayWindow {
+    pub(crate) fn request_redraw(&self) {
+        if let Some(window) = &self.0 {
+            window.request_redraw();
+        }
+    }
+}
+
+impl std::ops::Deref for DisplayWindow {
+    type Target = Window;
+    fn deref(&self) -> &Window {
+        self.0
+            .as_deref()
+            .expect("display operation requires a window")
     }
 }

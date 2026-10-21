@@ -63,7 +63,7 @@ impl<'a> From<&'a wgpu::AdapterInfo> for GpuAdapterObservation<'a> {
 /// Other render modules borrow `device` and `queue` from this struct.
 pub struct GpuContext {
     /// The GPU surface we render to (tied to the window).
-    pub surface: wgpu::Surface<'static>,
+    surface: Option<wgpu::Surface<'static>>,
     /// The logical GPU device — used to create buffers, textures, pipelines.
     pub device: wgpu::Device,
     /// The command queue — used to submit render commands to the GPU.
@@ -77,6 +77,70 @@ pub struct GpuContext {
 }
 
 impl GpuContext {
+    /// Select one Vulkan adapter and create a device without a window or surface.
+    pub fn new_offscreen(width: u32, height: u32, adapter_index: usize) -> Result<Self> {
+        anyhow::ensure!(
+            width > 0 && height > 0,
+            "render dimensions must be positive"
+        );
+        let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
+            backends: wgpu::Backends::VULKAN,
+            ..Default::default()
+        });
+        let adapter = instance
+            .enumerate_adapters(wgpu::Backends::VULKAN)
+            .into_iter()
+            .nth(adapter_index)
+            .context("Vulkan adapter index is out of range")?;
+        let adapter_info = adapter.get_info();
+        anyhow::ensure!(
+            adapter_info.device_type != wgpu::DeviceType::Cpu,
+            "selected Vulkan adapter is a software renderer"
+        );
+        let limits = adapter.limits();
+        let (device, queue) = block_on(adapter.request_device(&wgpu::DeviceDescriptor {
+            label: Some("VERA agent offscreen device"),
+            required_limits: wgpu::Limits {
+                max_texture_dimension_2d:
+                    limits.max_texture_dimension_2d.min(MAX_USEFUL_TEXTURE_DIM),
+                ..Default::default()
+            },
+            ..Default::default()
+        }))?;
+        let format = wgpu::TextureFormat::Bgra8UnormSrgb;
+        Ok(Self {
+            surface: None,
+            device,
+            queue,
+            surface_format: format,
+            adapter_info,
+            config: wgpu::SurfaceConfiguration {
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+                    | wgpu::TextureUsages::COPY_SRC
+                    | wgpu::TextureUsages::COPY_DST,
+                format,
+                width,
+                height,
+                present_mode: wgpu::PresentMode::Fifo,
+                alpha_mode: wgpu::CompositeAlphaMode::Opaque,
+                view_formats: vec![],
+                desired_maximum_frame_latency: 2,
+            },
+        })
+    }
+
+    /// Independent render extent on the same device and command queue.
+    pub fn shared_offscreen(&self) -> Self {
+        Self {
+            surface: None,
+            device: self.device.clone(),
+            queue: self.queue.clone(),
+            config: self.config.clone(),
+            surface_format: self.surface_format,
+            adapter_info: self.adapter_info.clone(),
+        }
+    }
+
     /// Initialize wgpu with the given window.
     ///
     /// This blocks on async wgpu calls using [`block_on`]. Safe to call from
@@ -215,7 +279,7 @@ impl GpuContext {
         );
 
         Ok(Self {
-            surface,
+            surface: Some(surface),
             device,
             queue,
             config,
@@ -239,7 +303,9 @@ impl GpuContext {
         }
         self.config.width = width;
         self.config.height = height;
-        self.surface.configure(&self.device, &self.config);
+        if let Some(surface) = &self.surface {
+            surface.configure(&self.device, &self.config);
+        }
         log::debug!("Surface resized to {}x{}", width, height);
     }
 
@@ -254,15 +320,20 @@ impl GpuContext {
     /// (`SurfaceWrapper::acquire`, `examples/features/src/framework.rs` at
     /// v27.0.1). A frame wgpu marks suboptimal is drawn as it is, as there.
     pub fn acquire_frame(&self) -> Result<Option<wgpu::SurfaceTexture>, wgpu::SurfaceError> {
+        let Some(surface) = &self.surface else {
+            return Ok(None);
+        };
         acquire_with_recovery(
-            || self.surface.get_current_texture(),
+            || surface.get_current_texture(),
             |error| {
                 log::warn!(
                     "Surface texture: {error}; reconfiguring the surface at {}x{}",
                     self.config.width,
                     self.config.height
                 );
-                self.surface.configure(&self.device, &self.config);
+                if let Some(surface) = &self.surface {
+                    surface.configure(&self.device, &self.config);
+                }
             },
         )
     }

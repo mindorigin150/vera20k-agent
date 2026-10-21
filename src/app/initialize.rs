@@ -11,7 +11,7 @@ use super::{
     ActiveEventLoop, App, AppState, Arc, AssetManager, BTreeMap, BasicSection, BatchRenderer,
     BitFont, Fullscreen, GameConfig, GameScreen, GpuContext, HashMap, HouseRoster, Instant,
     MusicPlayer, PhysicalSize, PlatformState, RandomMapGenerationRetention, Result, SfxPlayer,
-    SidebarChromeLayoutSpec, SidebarTab, StartupAudioDisposition, Window, WindowAttributes,
+    SidebarChromeLayoutSpec, SidebarTab, StartupAudioDisposition, WindowAttributes,
     frontend::startup_splash,
 };
 use crate::map::scenario_sources;
@@ -166,13 +166,50 @@ impl App {
         startup_options: RetailStartupOptions,
         external_launch: bool,
     ) -> Result<AppState> {
+        Self::initialize_host(
+            Some(event_loop),
+            None,
+            None,
+            capture_dimensions,
+            startup_options,
+            external_launch,
+        )
+    }
+
+    pub(crate) fn initialize_offscreen(assets: &Path, gpu: GpuContext) -> Result<AppState> {
+        let dimensions = (gpu.config.width, gpu.config.height);
+        Self::initialize_host(
+            None,
+            Some(gpu),
+            Some(assets.to_path_buf()),
+            Some(dimensions),
+            RetailStartupOptions {
+                audio_enabled: false,
+                media_archive_mode: crate::assets::asset_manager::MediaArchiveMode::Multiplayer,
+                ..Default::default()
+            },
+            true,
+        )
+    }
+
+    fn initialize_host(
+        event_loop: Option<&ActiveEventLoop>,
+        offscreen_gpu: Option<GpuContext>,
+        assets: Option<std::path::PathBuf>,
+        capture_dimensions: Option<(u32, u32)>,
+        startup_options: RetailStartupOptions,
+        external_launch: bool,
+    ) -> Result<AppState> {
         // One parsed retail profile snapshot yields two ordered products: the
         // independent frontend size selected after the early Video read, and the later
         // full-read profile retained by persistence. Capture is a sealed
         // automation lane, so it uses exact defaults and its explicit
         // dimensions instead of ingesting operator argv/profile screen state.
         let mut main_menu_shell_error = None;
-        let game_config = startup_asset_or_error(GameConfig::load(), &mut main_menu_shell_error);
+        let game_config = match assets {
+            Some(assets) => Some(GameConfig::from_retail_asset_root(assets)),
+            None => startup_asset_or_error(GameConfig::load(), &mut main_menu_shell_error),
+        };
         let options_load = select_startup_options_load(
             capture_dimensions,
             &startup_options,
@@ -235,16 +272,27 @@ impl App {
         if let Some(icon) = &retail_icon {
             window_attrs = icon.apply(window_attrs);
         }
-        let window: Arc<Window> = Arc::new(event_loop.create_window(window_attrs)?);
-        // gamemd's WinMain builds WWMouse (`0x006BDF1C`), whose constructor hides
-        // the cursor, before the startup splash; from the first frame after it,
-        // `show_os_cursor_only_without_game_cursor` owns the cursor.
-        window.set_cursor_visible(false);
-        #[cfg(target_os = "macos")]
-        if let Some(icon) = &retail_icon {
-            icon.set_dock_icon();
-        }
-        let gpu: GpuContext = GpuContext::new(window.clone())?;
+        let window = match event_loop {
+            Some(event_loop) => {
+                let window = Arc::new(event_loop.create_window(window_attrs)?);
+                window.set_cursor_visible(false);
+                #[cfg(target_os = "macos")]
+                if let Some(icon) = &retail_icon {
+                    icon.set_dock_icon();
+                }
+                Some(window)
+            }
+            None => None,
+        };
+        let gpu = match offscreen_gpu {
+            Some(gpu) => gpu,
+            None => GpuContext::new(
+                window
+                    .as_ref()
+                    .expect("display initialization has a window")
+                    .clone(),
+            )?,
+        };
         let batch_renderer: BatchRenderer = BatchRenderer::new(&gpu);
         let status_screen_fill = batch_renderer.create_texture(&gpu, &[255; 4], 1, 1);
         let status_card_glow =
@@ -845,7 +893,9 @@ impl App {
         #[cfg(feature = "telemetry-dashboard")]
         attach_dashboard(&mut state);
 
-        if let Ok(quickplay) = std::env::var("RA2_QUICKPLAY") {
+        if event_loop.is_some()
+            && let Ok(quickplay) = std::env::var("RA2_QUICKPLAY")
+        {
             // The developer shortcut carries an authored-map sandbox through
             // the unverified legacy Battle loader. It has no artificial AI
             // opponent or starting forces; this is not campaign admission.

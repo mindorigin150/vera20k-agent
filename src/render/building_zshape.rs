@@ -25,6 +25,7 @@ use crate::render::native_z::{ZSHAPE_TEXEL_BIAS, zshape_remap};
 pub const BUILDNGZ_FILE: &str = "buildngz.sha";
 
 /// Loaded z-shape: the GPU bind group for group 2 of the zsprite pipelines.
+#[derive(Clone)]
 pub struct BuildingZShape {
     pub bind_group: wgpu::BindGroup,
     pub width: u32,

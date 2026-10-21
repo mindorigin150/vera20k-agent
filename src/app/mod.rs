@@ -12,7 +12,7 @@ use winit::event::{MouseButton, MouseScrollDelta, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, ControlFlow};
 use winit::keyboard::{KeyCode, ModifiersState, PhysicalKey};
 use winit::platform::modifier_supplement::KeyEventExtModifierSupplement;
-use winit::window::{Fullscreen, Window, WindowAttributes, WindowId};
+use winit::window::{Fullscreen, WindowAttributes, WindowId};
 
 use crate::app::match_runtime::sim_tick;
 use crate::app::presentation::render;
@@ -37,6 +37,7 @@ pub(crate) mod campaign_defeat;
 pub(crate) mod campaign_victory;
 pub(crate) mod chrono_screen;
 mod cncnet;
+pub mod cpu_scene;
 #[cfg(feature = "debug-tools")]
 pub(crate) mod debug_tools;
 pub(crate) mod diagnostics;
@@ -52,6 +53,7 @@ pub mod match_bootstrap;
 pub(crate) mod match_diagnostics;
 pub(crate) mod match_runtime;
 pub(crate) mod movie_playback;
+pub mod offscreen;
 pub(crate) mod persistence;
 pub(crate) mod presentation;
 pub(crate) mod process_assets;
@@ -193,7 +195,9 @@ impl App {
 
     pub fn finish_capture(&mut self) -> Result<()> {
         if let Some(error) = self.startup_failure.as_ref().or_else(|| {
-            self.state.as_ref().and_then(|state| state.frontend.external_launch_error.as_ref())
+            self.state
+                .as_ref()
+                .and_then(|state| state.frontend.external_launch_error.as_ref())
         }) {
             anyhow::bail!("{error}");
         }

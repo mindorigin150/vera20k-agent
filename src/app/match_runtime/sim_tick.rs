@@ -951,7 +951,7 @@ fn should_record_replay_tick(
     tick_result.frame_committed || !due_commands.is_empty() || tick_result.terminal_score_finalized
 }
 
-fn advance_one_simulation_frame(
+pub(crate) fn advance_one_simulation_frame(
     state: &mut AppState,
     tick_lane: TickLane,
     mouse_scroll: Option<(f32, f32)>,
@@ -1360,27 +1360,12 @@ fn advance_one_simulation_frame(
                         let Some(runtime) = runtime else {
                             return [0; 3];
                         };
-                        let name = runtime.simulation.interner().resolve(owner);
-                        // CreateHouses initializes the two literal special
-                        // houses without ComputeRemap; their +56FC stays0.
-                        if runtime.simulation.session().game_mode_nonzero()
-                            && (name.eq_ignore_ascii_case("Neutral")
-                                || name.eq_ignore_ascii_case("Special"))
-                        {
-                            return [0; 3];
-                        }
-                        let index = colors.get(name).copied().or_else(|| {
-                            colors
-                                .iter()
-                                .find(|(candidate, _)| candidate.eq_ignore_ascii_case(name))
-                                .map(|(_, &color)| color)
-                        });
-                        index.map_or([0; 3], |index| {
-                            crate::render::palette_light::house_laser_rgb(
-                                &runtime.resources.rules.house_color_ramps,
-                                index,
-                            )
-                        })
+                        crate::app::presentation::lasers::house_rgb(
+                            &runtime.simulation,
+                            &runtime.resources.rules,
+                            colors,
+                            owner,
+                        )
                     });
                 }
                 LifecycleOutput::ElectricBoltCreated(birth) => {

@@ -77,6 +77,19 @@ impl PendingBgra8Readback {
             mapped_at_creation: false,
         });
 
+        let pending = Self {
+            buffer,
+            width,
+            height,
+            tight_bytes_per_row,
+            padded_bytes_per_row,
+        };
+        pending.encode_copy(encoder, texture);
+        Ok(pending)
+    }
+
+    /// Reuse this slot's buffer after its previous mapping finished.
+    pub fn encode_copy(&self, encoder: &mut wgpu::CommandEncoder, texture: &wgpu::Texture) {
         encoder.copy_texture_to_buffer(
             wgpu::TexelCopyTextureInfo {
                 texture,
@@ -85,33 +98,25 @@ impl PendingBgra8Readback {
                 aspect: wgpu::TextureAspect::All,
             },
             wgpu::TexelCopyBufferInfo {
-                buffer: &buffer,
+                buffer: &self.buffer,
                 layout: wgpu::TexelCopyBufferLayout {
                     offset: 0,
-                    bytes_per_row: Some(padded_bytes_per_row),
-                    rows_per_image: Some(height),
+                    bytes_per_row: Some(self.padded_bytes_per_row),
+                    rows_per_image: Some(self.height),
                 },
             },
             wgpu::Extent3d {
-                width,
-                height,
+                width: self.width,
+                height: self.height,
                 depth_or_array_layers: 1,
             },
         );
-
-        Ok(Self {
-            buffer,
-            width,
-            height,
-            tight_bytes_per_row,
-            padded_bytes_per_row,
-        })
     }
 
     /// Wait for the submitted copy, remove GPU row padding, and return tight
     /// top-left BGRA8 pixels.
     pub fn finish(
-        self,
+        &self,
         device: &wgpu::Device,
         submission_index: wgpu::SubmissionIndex,
         timeout: std::time::Duration,

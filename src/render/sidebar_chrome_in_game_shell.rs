@@ -39,6 +39,7 @@ pub(super) fn load_backgrounds(
 }
 
 /// Art shared by the pause menu and Game Controls in an active scenario.
+#[derive(Clone)]
 pub struct InGameShellArt<T> {
     /// SIDE2B frame zero paints the blank button-column tiles. Native layout
     /// still advances by SIDE2's height (0x0072FD96 versus 0x0072F754).

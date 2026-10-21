@@ -7,6 +7,30 @@ use crate::sim::combat::laser::{LaserBirth, LaserColor};
 use crate::sim::rng::MainRngDraws;
 use crate::sim::timer::CdTimer;
 
+/// The shared House56FC laser color, including the native special-house zero.
+pub(crate) fn house_rgb(
+    sim: &crate::sim::world::Simulation,
+    rules: &crate::rules::ruleset::RuleSet,
+    colors: &crate::map::houses::HouseColorMap,
+    owner: crate::sim::intern::InternedId,
+) -> [u8; 3] {
+    let name = sim.interner().resolve(owner);
+    if sim.session().game_mode_nonzero()
+        && (name.eq_ignore_ascii_case("Neutral") || name.eq_ignore_ascii_case("Special"))
+    {
+        return [0; 3];
+    }
+    let index = colors.get(name).copied().or_else(|| {
+        colors
+            .iter()
+            .find(|(candidate, _)| candidate.eq_ignore_ascii_case(name))
+            .map(|(_, &color)| color)
+    });
+    index.map_or([0; 3], |index| {
+        crate::render::palette_light::house_laser_rgb(&rules.house_color_ramps, index)
+    })
+}
+
 struct Laser {
     birth: LaserBirth,
     /// Derived draw colors. Birth owns base outer/spread; each composite

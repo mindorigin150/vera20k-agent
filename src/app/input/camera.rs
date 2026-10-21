@@ -1570,6 +1570,39 @@ pub(crate) fn tactical_viewport_size(state: &AppState) -> (u32, u32) {
 /// centring on a cell has to put a unit standing there at the tactical centre,
 /// and `centring_lands_a_unit_on_that_cell_at_the_tactical_centre` fails the
 /// moment the two drift apart.
+/// Shared post-load camera anchor for GPU and CPU presentation.
+pub(crate) fn initial_camera_anchor(
+    simulation: Option<&crate::sim::world::Simulation>,
+    local_owner: Option<&str>,
+    opening_view_cell: Option<(u16, u16)>,
+    resolved: &crate::map::resolved_terrain::ResolvedTerrainGrid,
+    map: &crate::map::map_file::MapFile,
+) -> (f32, f32) {
+    let local_cell = local_owner.zip(simulation).and_then(|(owner, sim)| {
+        let owner = sim.interner().get(owner)?;
+        sim.entities()
+            .values()
+            .find(|entity| entity.owner() == owner)
+            .map(|entity| (entity.position.rx(), entity.position.ry()))
+    });
+    if let Some((rx, ry)) = opening_view_cell.or(local_cell) {
+        cell_centre_world_point(rx, ry, resolved.cell(rx, ry).map_or(0, |cell| cell.level))
+    } else if let Some(waypoint) = crate::map::waypoints::first_multiplayer_start(&map.waypoints) {
+        cell_centre_world_point(
+            waypoint.rx,
+            waypoint.ry,
+            resolved
+                .cell(waypoint.rx, waypoint.ry)
+                .map_or(0, |cell| cell.level),
+        )
+    } else {
+        let (x, y, width, height) = tactical_scroll_rect(
+            crate::map::playfield::PlayfieldBounds::from_map_header(&map.header),
+        );
+        (x + width / 2.0, y + height / 2.0)
+    }
+}
+
 pub(crate) fn cell_centre_world_point(rx: u16, ry: u16, z: u8) -> (f32, f32) {
     let (nw_x, nw_y) = terrain::iso_to_screen(rx, ry, z);
     (
@@ -1905,7 +1938,7 @@ fn clamp_camera_point_for_state(
     )
 }
 
-fn clamp_camera_point_to_local_bounds(
+pub(crate) fn clamp_camera_point_to_local_bounds(
     point: (f32, f32),
     bounds: crate::map::playfield::PlayfieldBounds,
     viewport: (f32, f32),

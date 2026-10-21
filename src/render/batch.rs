@@ -262,6 +262,7 @@ fn source_index_texture_on_device(
 /// A GPU texture prepared for batch rendering.
 ///
 /// Created via `BatchRenderer::create_texture()`.
+#[derive(Clone)]
 pub struct BatchTexture {
     /// Bind group containing texture view + sampler.
     pub bind_group: wgpu::BindGroup,
@@ -505,6 +506,28 @@ pub struct BatchRenderer {
 }
 
 impl BatchRenderer {
+    /// Share immutable pipelines on the same device. Camera and shroud buffers stay independent.
+    pub(crate) fn share_pipelines_from(&mut self, source: &Self) {
+        self.overlay_pipeline = source.overlay_pipeline.clone();
+        self.zsprite_read_pipeline = source.zsprite_read_pipeline.clone();
+        self.zsprite_write_pipeline = source.zsprite_write_pipeline.clone();
+        self.zshape_bind_group_layout = source.zshape_bind_group_layout.clone();
+        self.zdepth_pipeline = source.zdepth_pipeline.clone();
+        self.overlay_passthrough_pipeline = source.overlay_passthrough_pipeline.clone();
+        #[cfg(test)]
+        {
+            self.depth_stamp_pipeline = source.depth_stamp_pipeline.clone();
+        }
+        self.depth_test_pipeline = source.depth_test_pipeline.clone();
+        self.texture_bind_group_layout = source.texture_bind_group_layout.clone();
+        self.zdepth_texture_bind_group_layout = source.zdepth_texture_bind_group_layout.clone();
+        self.unit_atlas_bind_group_layout = source.unit_atlas_bind_group_layout.clone();
+        self.voxel_palette_bind_group_layout = source.voxel_palette_bind_group_layout.clone();
+        self.voxel_sprite_pipeline = source.voxel_sprite_pipeline.clone();
+        self.voxel_passthrough_pipeline = source.voxel_passthrough_pipeline.clone();
+        self.camera_bind_group_layout = source.camera_bind_group_layout.clone();
+    }
+
     /// Create a new BatchRenderer. Compiles shader, creates pipeline and camera uniform.
     pub fn new(gpu: &GpuContext) -> Self {
         Self::new_with_device(&gpu.device, &gpu.queue, gpu.surface_format)

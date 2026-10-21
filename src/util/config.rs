@@ -272,7 +272,7 @@ impl GameConfig {
         })
     }
 
-    fn from_retail_asset_root(ra2_dir: PathBuf) -> Self {
+    pub fn from_retail_asset_root(ra2_dir: PathBuf) -> Self {
         Self {
             ini: Default::default(),
             paths: PathsConfig {

@@ -41,6 +41,7 @@ pub struct TileUV {
 ///
 /// Created once at map load time. The batch renderer uses `get_uv()` to
 /// look up per-tile UV coordinates when building sprite instances.
+#[derive(Clone)]
 pub struct TileAtlas {
     /// The GPU texture containing all packed tiles.
     pub texture: BatchTexture,

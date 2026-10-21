@@ -208,6 +208,7 @@ pub struct SidebarChromeExtraEntry {
     pub entry: SidebarChromeEntry,
 }
 
+#[derive(Clone)]
 pub(crate) struct SidebarDarkenMask {
     pub texture: BatchTexture,
     pub frame_origin: [f32; 2],
@@ -259,6 +260,7 @@ impl SidebarDarkenMask {
 }
 
 /// All sidebar chrome art for one faction theme, packed into a single texture.
+#[derive(Clone)]
 pub struct SidebarChromeAtlas {
     source_identity: SidebarChromeAtlasIdentity,
     pub texture: BatchTexture,
@@ -323,6 +325,7 @@ impl SidebarChromeAtlas {
     }
 }
 
+#[derive(Clone)]
 pub struct SidebarChromeSet {
     pub allied: Option<SidebarChromeAtlas>,
     pub soviet: Option<SidebarChromeAtlas>,

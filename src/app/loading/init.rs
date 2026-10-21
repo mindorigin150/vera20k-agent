@@ -3537,34 +3537,13 @@ pub(crate) fn load_map_from_initial(
     // depends on the UI scale, which only exists once `AppState` is built, so the
     // conversion to a camera top-left happens in `loading::transitions` where the
     // scaled layout spec is available.
-    let local_start_cell: Option<(u16, u16)> = initial_local_owner
-        .as_deref()
-        .zip(simulation.as_ref())
-        .and_then(|(owner, sim)| {
-            let owner_id = sim.interner().get(owner)?;
-            sim.entities()
-                .keys_sorted()
-                .into_iter()
-                .filter_map(|id| sim.entities().get(id))
-                .find(|e| e.owner() == owner_id)
-                .map(|e| (e.position.rx(), e.position.ry()))
-        });
-    let (camera_anchor_x, camera_anchor_y): (f32, f32) =
-        if let Some((rx, ry)) = opening_view_cell.or(local_start_cell) {
-            let z = resolved_terrain.cell(rx, ry).map_or(0, |cell| cell.level);
-            crate::app::input::camera::cell_centre_world_point(rx, ry, z)
-        } else if let Some(start_wp) = waypoints::first_multiplayer_start(&map_data.waypoints) {
-            let wp_z = resolved_terrain
-                .cell(start_wp.rx, start_wp.ry)
-                .map_or(0, |cell| cell.level);
-            crate::app::input::camera::cell_centre_world_point(start_wp.rx, start_wp.ry, wp_z)
-        } else {
-            // VERA-only fallback: the centre of the native scroll rectangle.
-            let (area_x, area_y, area_w, area_h) = crate::app::input::camera::tactical_scroll_rect(
-                crate::map::playfield::PlayfieldBounds::from_map_header(&map_data.header),
-            );
-            (area_x + area_w / 2.0, area_y + area_h / 2.0)
-        };
+    let (camera_anchor_x, camera_anchor_y) = crate::app::input::camera::initial_camera_anchor(
+        simulation.as_ref(),
+        initial_local_owner.as_deref(),
+        opening_view_cell,
+        &resolved_terrain,
+        &map_data,
+    );
     let presentation = crate::app::loading::init_helpers::finish_presentation_assets(
         gpu,
         batch,

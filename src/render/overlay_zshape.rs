@@ -25,6 +25,7 @@ struct ShapeFrame {
     data_offset: i32,
 }
 
+#[derive(Clone)]
 pub(crate) struct OverlayZShapes {
     pub bind_group: wgpu::BindGroup,
     frames: [Option<ShapeFrame>; 4],
