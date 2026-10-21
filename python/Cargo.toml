@@ -1,0 +1,18 @@
+[package]
+name = "vera20k-agent-python"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+name = "_native"
+crate-type = ["cdylib"]
+
+[dependencies]
+vera20k-core = { path = "../src" }
+vera20k = { path = "..", default-features = false }
+pyo3 = { version = "0.27", features = ["extension-module"] }
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

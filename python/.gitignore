@@ -1,0 +1,4 @@
+vera20k_agent/_native*.so
+vera20k_agent/_native*.pyd
+*.egg-info/
+dist/

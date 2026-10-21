@@ -1,0 +1,9 @@
+{
+  "map": "XMP03T4.MAP",
+  "player_country": "America",
+  "opponent_country": "Russia",
+  "difficulty": "Normal",
+  "player_start": 0,
+  "opponent_start": 1,
+  "max_steps": 112500
+}

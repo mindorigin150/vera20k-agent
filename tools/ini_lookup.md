@@ -81,7 +81,8 @@ parity_bin=$(python -m tools.cargo_run --resolve parity-digest --profile release
 ```
 
 For the game capture, follow [map observation](map_observation.md) with the
-checked-in example profile. Headless parity-digest has a documented 66 ms cadence;
-the app capture uses 22 ms. Their hashes are not compared against each other.
+checked-in example profile with its recorded build. Those sealed profiles retain the historical
+22 ms capture convention. The current client and headless runtime share a 16 ms step.
+The agent package compares those current execution paths in `python/tests/test_environment.py`.
 No new simulation math, RNG draws, timer writes or detach calls are introduced.
 The existing source-policy and reader residuals above remain explicit.

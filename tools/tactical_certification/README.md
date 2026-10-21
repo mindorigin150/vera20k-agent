@@ -1,5 +1,10 @@
 # Tactical certification tooling
 
+The checked-in v1–v3 profiles seal the historical 22 ms clock and require their recorded build.
+The current agent interface uses the shared 16 ms clock and separate execution-path comparison tests.
+Do not reinterpret historical capture timestamps as current-clock evidence.
+
+
 This isolated package drives and validates the hidden
 `radar-online-v2` VERA20k production checkpoint. It accepts only one sealed
 Soviet or Yuri profile, uses an explicit fixed Battle launch, and never focuses

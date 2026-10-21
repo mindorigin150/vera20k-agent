@@ -1,0 +1,19 @@
+[build-system]
+requires = ["maturin>=1.9,<2"]
+build-backend = "maturin"
+
+[project]
+name = "vera20k-agent"
+version = "0.1.0"
+readme = "README.md"
+license = { file = "../LICENSE-GPL" }
+requires-python = ">=3.12"
+description = "Direct-command Gymnasium environments for the VERA20k engine"
+dependencies = ["gymnasium>=0.29.1,<2", "numpy>=1.26,<3"]
+
+[project.urls]
+Repository = "https://github.com/mindorigin150/vera20k-agent"
+
+[tool.maturin]
+python-source = "."
+module-name = "vera20k_agent._native"
