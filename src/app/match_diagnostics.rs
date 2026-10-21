@@ -244,7 +244,7 @@ mod tests {
         let mut log = ReplayLog::new(ReplayHeader {
             pixel_conversion_bounds: Default::default(),
             version: 71,
-            tick_hz: 15,
+            tick_hz: 15.0,
             seed,
             map_name: map_name.to_owned(),
             rules_hash: 0x5678,

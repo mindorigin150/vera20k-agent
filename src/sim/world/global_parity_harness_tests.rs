@@ -963,7 +963,7 @@ fn cross_house_move_executes_and_replays_without_changing_actor_owner() {
     let mut replay = ReplayLog::new(ReplayHeader {
         version: 1,
         pixel_conversion_bounds: recorded.session.pixel_conversion_bounds(),
-        tick_hz: 15,
+        tick_hz: 15.0,
         seed: HARNESS_SEED,
         map_name: "cross_house_move".into(),
         rules_hash: 0,
@@ -1035,7 +1035,7 @@ fn global_skirmish_replay_is_deterministic_and_baseline_stable() {
     let mut log = ReplayLog::new(ReplayHeader {
         version: 1,
         pixel_conversion_bounds: rec.session.pixel_conversion_bounds(),
-        tick_hz: 15,
+        tick_hz: 15.0,
         seed: HARNESS_SEED,
         map_name: "global_parity_harness".to_string(),
         rules_hash: 0,

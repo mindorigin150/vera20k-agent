@@ -153,7 +153,7 @@ fn record(
     let mut log = ReplayLog::new(ReplayHeader {
         pixel_conversion_bounds: Default::default(),
         version: 1,
-        tick_hz: 15,
+        tick_hz: 15.0,
         // Record the sim's actual construction seed — playback fidelity is
         // header-seed-driven and ReplayRunner asserts the two agree.
         seed: sim.session.seed(),

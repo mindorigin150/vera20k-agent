@@ -32,7 +32,7 @@ fn actual_computer_yard_retasks_existing_starting_force_through_move() {
     let mut scene = load_session(&root, "XMP03T4.MAP", 0x1234_5678, launch)
         .expect("unchanged stock Battle startup");
     // The client's cadence; headless_scenario's convenience cadence is 66 ms.
-    const CLIENT_TICK_MS: u32 = 1000 / crate::util::fixed_math::SIM_TICK_HZ;
+    const CLIENT_TICK_MS: u32 = crate::util::fixed_math::SIM_TICK_MS;
     let sim = scene.sim();
     let owner = sim.interner.get("Computer1").unwrap();
     let rules = &scene.runtime.resources.rules;

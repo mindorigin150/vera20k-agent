@@ -1758,7 +1758,7 @@ fn prerequisite_loss_events_preserve_player_copies_cleanup_and_snapshot_replay()
 
     let header = ReplayHeader {
         version: 1,
-        tick_hz: 15,
+        tick_hz: 15.0,
         seed: sim.session.seed(),
         pixel_conversion_bounds: sim.session.pixel_conversion_bounds(),
         map_name: "factory-loss".into(),

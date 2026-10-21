@@ -23,9 +23,9 @@ pub(crate) const CLEAR_COLOR: wgpu::Color = wgpu::Color {
 };
 
 /// Fixed deterministic simulation rate — re-exported from util::fixed_math.
-pub(crate) const SIM_TICK_HZ: u32 = crate::util::fixed_math::SIM_TICK_HZ;
+pub(crate) const SIM_TICK_HZ: f64 = crate::util::fixed_math::SIM_TICK_HZ;
 /// Integer tick duration used by deterministic step execution.
-pub(crate) const SIM_TICK_MS: u32 = 1000 / SIM_TICK_HZ;
+pub(crate) const SIM_TICK_MS: u32 = crate::util::fixed_math::SIM_TICK_MS;
 /// Verified retail/YR skirmish fallback from rulesmd.ini
 /// `[MultiplayerDialogSettings] GameSpeed=1`.
 pub(crate) const DEFAULT_YR_SKIRMISH_GAME_SPEED: u32 = 1;

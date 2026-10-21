@@ -41,10 +41,10 @@ pub const SIM_HALF: SimFixed = SimFixed::lit("0.5");
 /// conversion (ROF, ReloadRate, C4Delay, ore growth, trigger time, ...).
 pub const RA2_LOGIC_FRAMES_PER_SECOND: u32 = 15;
 
-/// VERA's fixed simulation step rate in Hz (22 ms per tick on the client;
-/// see `app::types::SIM_TICK_MS`). NOT the native logic-frame rate — INI
-/// timing conversions use `RA2_LOGIC_FRAMES_PER_SECOND` above.
-pub const SIM_TICK_HZ: u32 = 45;
+/// GameSpeed=1 frame duration shared by client, headless and agent environments.
+/// INI time conversions retain `RA2_LOGIC_FRAMES_PER_SECOND`.
+pub const SIM_TICK_MS: u32 = 16;
+pub const SIM_TICK_HZ: f64 = 1000.0 / SIM_TICK_MS as f64;
 
 // ---------------------------------------------------------------------------
 // RA2 speed conversion

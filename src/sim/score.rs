@@ -531,7 +531,7 @@ mod tests {
         let mut replay = ReplayLog::new(ReplayHeader {
             pixel_conversion_bounds: Default::default(),
             version: 1,
-            tick_hz: 15,
+            tick_hz: 15.0,
             seed,
             map_name: "terminal-score.map".to_string(),
             rules_hash: 0,

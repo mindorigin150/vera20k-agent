@@ -247,7 +247,7 @@ fn scenario_services_replay_between_production_frames() {
         let mut replay = ReplayLog::new(ReplayHeader {
             pixel_conversion_bounds: live.simulation.session.pixel_conversion_bounds(),
             version: 2,
-            tick_hz: 15,
+            tick_hz: 15.0,
             seed: 0,
             map_name: String::new(),
             rules_hash: 0,

@@ -73,7 +73,7 @@ fn run_with_frame_profile(total_ms: u32, frame_ms: u32) -> (u64, Vec<Option<u64>
     let mut replay = ReplayLog::new(ReplayHeader {
         pixel_conversion_bounds: sim.session.pixel_conversion_bounds(),
         version: 1,
-        tick_hz: 30,
+        tick_hz: 30.0,
         seed: 123_456,
         map_name: "determinism_test".to_string(),
         rules_hash: 0,
@@ -172,7 +172,7 @@ fn replay_reapplies_header_seed() {
     let mut replay = ReplayLog::new(ReplayHeader {
         pixel_conversion_bounds: sim.session.pixel_conversion_bounds(),
         version: 1,
-        tick_hz: 30,
+        tick_hz: 30.0,
         // The descriptor seed/map name are what the sim was constructed from;
         // recording them is exactly what the live header path does.
         seed: u64::from(desc.seed),

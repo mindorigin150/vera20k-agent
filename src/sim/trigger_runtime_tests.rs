@@ -3008,7 +3008,7 @@ fn master_frame_save_load_continues_trigger_projectile_and_delete_state() {
     let mut replay_log = ReplayLog::new(ReplayHeader {
         pixel_conversion_bounds: Default::default(),
         version: 1,
-        tick_hz: 15,
+        tick_hz: 15.0,
         seed: original.session.seed(),
         map_name: original.session.map_name().to_owned(),
         rules_hash: 0,

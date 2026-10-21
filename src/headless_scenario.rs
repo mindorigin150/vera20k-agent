@@ -139,11 +139,8 @@ impl HeadlessScenario {
     }
 }
 
-/// Native logic-frame cadence (66 ms). NOTE: this does NOT match the
-/// client, which steps the sim at `app::types::SIM_TICK_MS` = 22 ms — a
-/// recorded 3x tooling divergence; headless digests are not tick-comparable
-/// to client runs until it is resolved.
-pub const SIM_TICK_MS: u32 = 1000 / crate::util::fixed_math::RA2_LOGIC_FRAMES_PER_SECOND;
+/// Shared GameSpeed=1 frame duration.
+pub use crate::util::fixed_math::SIM_TICK_MS;
 
 /// Load `map_file_name` from the retail install at `retail_dir` with a pinned seed.
 ///
@@ -445,6 +442,9 @@ pub fn load_with_launch_and_ini(
         return Err("headless post-map navigation is unavailable".to_string());
     }
     sim.session.publish_started();
+    sim.batch_path_searches();
+    sim.batch_target_scans();
+    sim.hash_state_every(crate::sim::replay::PLAY_HASH_INTERVAL);
     Ok(HeadlessScenario {
         runtime: crate::sim::runtime::SimRuntime {
             simulation: sim,
@@ -462,10 +462,11 @@ impl HeadlessScenario {
     /// Advance one committed simulation frame with no player commands,
     /// through the same bound-resource runtime transaction the app uses.
     pub fn tick(&mut self) {
+        let commands = self.runtime.simulation.take_due_commands();
         let _ = self
             .runtime
             .advance_frame(
-                &[],
+                &commands,
                 SIM_TICK_MS,
                 crate::sim::world::TickLane::Ordinary,
                 crate::sim::world::FrameEffects::default(),

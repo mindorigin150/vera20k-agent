@@ -173,7 +173,7 @@ enum PresentationClock {
 }
 
 pub(crate) const MAP_PRESENTATION_CLOCK_POLICY: &str = "map-exact-step-presentation-v1";
-pub(crate) const MAP_PRESENTATION_INTERVAL_MS: u64 = 22;
+pub(crate) const MAP_PRESENTATION_INTERVAL_MS: u64 = crate::util::fixed_math::SIM_TICK_MS as u64;
 
 impl DiagnosticsState {
     pub(crate) fn new(
@@ -272,7 +272,7 @@ mod tests {
         let mut diagnostics = DiagnosticsState::new(None);
         assert_eq!(diagnostics.presentation_ms(1), None);
         diagnostics.use_map_presentation_clock().unwrap();
-        for (tick, expected) in [(0, 0), (1, 22), (3, 66), (100_000, 2_200_000)] {
+        for (tick, expected) in [(0, 0), (1, 16), (3, 48), (100_000, 1_600_000)] {
             assert_eq!(diagnostics.presentation_ms(tick), Some(expected));
         }
         assert!(diagnostics.use_map_presentation_clock().is_err());
@@ -297,10 +297,10 @@ mod tests {
             now(1),
             &|text| text.len() as i32,
         );
-        assert_eq!(messages.messages()[0].deadline_ms, Some(4_022));
-        // A cached pre-step timestamp would incorrectly expire at tick182.
-        assert!(!messages.manage(now(182)));
-        assert!(messages.manage(now(183)));
+        assert_eq!(messages.messages()[0].deadline_ms, Some(4_016));
+        // A cached pre-step timestamp would incorrectly expire at tick251.
+        assert!(!messages.manage(now(251)));
+        assert!(messages.manage(now(252)));
         assert!(messages.messages().is_empty());
     }
 

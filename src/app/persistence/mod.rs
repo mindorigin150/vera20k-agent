@@ -687,7 +687,7 @@ mod tests {
             let mut replay = ReplayLog::new(ReplayHeader {
                 pixel_conversion_bounds: Default::default(),
                 version: 1,
-                tick_hz: 15,
+                tick_hz: 15.0,
                 seed: simulation.session().seed(),
                 map_name: simulation.session().map_name().to_owned(),
                 rules_hash: rules.simulation_config_hash(),

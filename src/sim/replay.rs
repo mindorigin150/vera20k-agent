@@ -680,7 +680,7 @@ pub struct ReplayHeader {
     #[serde(default)]
     pub pixel_conversion_bounds: crate::util::pixel_conversion::PixelConversionBounds,
     pub version: u32,
-    pub tick_hz: u32,
+    pub tick_hz: f64,
     pub seed: u64,
     pub map_name: String,
     pub rules_hash: u64,
@@ -1419,7 +1419,7 @@ mod tests {
         let mut log = ReplayLog::new(ReplayHeader {
             pixel_conversion_bounds: Default::default(),
             version: 1,
-            tick_hz: 30,
+            tick_hz: 30.0,
             seed: 42,
             map_name: "test".to_string(),
             rules_hash: 123,
@@ -1442,7 +1442,7 @@ mod tests {
         let json = serde_json::to_string(&log).expect("serialize");
         assert_eq!(json.matches("state_hash").count(), 1);
         let parsed: ReplayLog = serde_json::from_str(&json).expect("deserialize");
-        assert_eq!(parsed.header.tick_hz, 30);
+        assert_eq!(parsed.header.tick_hz, 30.0);
         assert_eq!(parsed.ticks.len(), 2);
         assert_eq!(parsed.ticks[0].tick, 1);
         assert_eq!(parsed.ticks[0].state_hash, Some(999));
@@ -1461,7 +1461,7 @@ mod tests {
         let mut log = ReplayLog::new(ReplayHeader {
             pixel_conversion_bounds: Default::default(),
             version: 1,
-            tick_hz: 15,
+            tick_hz: 15.0,
             seed: 7,
             map_name: "abort.map".to_string(),
             rules_hash: 9,
@@ -1506,7 +1506,7 @@ mod tests {
         let mut log = ReplayLog::new(ReplayHeader {
             pixel_conversion_bounds: Default::default(),
             version: 1,
-            tick_hz: 15,
+            tick_hz: 15.0,
             seed: 7,
             map_name: "speed.map".to_string(),
             rules_hash: 0,
@@ -1530,7 +1530,7 @@ mod tests {
         let mut log = ReplayLog::new(ReplayHeader {
             pixel_conversion_bounds: Default::default(),
             version: 1,
-            tick_hz: 15,
+            tick_hz: 15.0,
             seed: 7,
             map_name: "future-command.map".to_string(),
             rules_hash: 0,
