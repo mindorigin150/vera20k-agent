@@ -97,6 +97,39 @@ def test_gpu_observation_reads_preserve_state_and_match_batch_pixels(assets):
         batch.close()
 
 
+def test_gpu_credits_display_updates_after_spending_without_input_events(assets):
+    """Regression: direct production must update the HUD on committed frames."""
+    batch = VeraBatch(assets)
+    cpu = VeraBatch(assets, render=False)
+    try:
+        initial = batch.reset_slots({0: 42})[0]
+        cpu.reset_slots({0: 42})
+        mcv = next(e["id"] for e in initial["entities"] if e["owned"] and e["type_name"] == "AMCV")
+        state = initial
+        requested = False
+        for frame in range(1, 401):
+            actions = [{"command": "deploy", "entity_id": mcv}] if frame == 1 else []
+            if not requested and frame % 10 == 0 and any(
+                option["type_name"] == "GAPOWR" and option["enabled"] for option in state["build_options"]
+            ):
+                actions = [{"command": "produce", "type_name": "GAPOWR"}]
+                requested = True
+            batch.step_slots({0: actions})
+            cpu.step_slots({0: actions})
+            if frame % 10 == 0:
+                state = batch.observe_slots([0])[0]
+                assert diagnostic(batch) == diagnostic(cpu)
+        assert requested and state["credits"] < initial["credits"]
+        # The fixed 800x600 native HUD puts the credits digits inside this strip.
+        assert np.any(initial["image"][3:18, 640:790] != state["image"][3:18, 640:790])
+        before = diagnostic(batch)
+        np.testing.assert_array_equal(state["image"], batch.observe_slots([0])[0]["image"])
+        assert diagnostic(batch) == before
+    finally:
+        batch.close()
+        cpu.close()
+
+
 def test_gym_lifecycle_and_terminal_reset_contract(assets):
     env = gym.make("VERA20k-v0", assets=assets, config={"max_steps": 2}).unwrapped
     try:

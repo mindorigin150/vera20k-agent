@@ -136,6 +136,11 @@ impl OffscreenScene {
                 crate::sim::world::TickLane::Ordinary,
                 None,
             );
+            crate::app::presentation::sidebar_render::advance_sidebar_after_frame(
+                &mut self.state,
+                committed,
+                crate::sim::world::TickLane::Ordinary,
+            );
             let sim = &self
                 .state
                 .match_state
