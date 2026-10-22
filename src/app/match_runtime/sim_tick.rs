@@ -851,44 +851,11 @@ fn advance_in_game_runtime_mode(
         if frame_committed && state.diag.telemetry_active() {
             state.match_state.telemetry_tick_rate.record(Instant::now());
         }
-        crate::app::presentation::sidebar_render::advance_sidebar_credits_after_frame(
+        crate::app::presentation::sidebar_render::advance_sidebar_after_frame(
             state,
             frame_committed,
             tick_lane,
         );
-        if frame_committed {
-            // House4F92E2's strip pass reaches this frame as a pending
-            // recheck; membership must not wait for the next player input.
-            let recheck = state
-                .match_state
-                .match_presentation
-                .sidebar_projection
-                .cameo_recheck_pending();
-            // Native Strip AI6A8CF3 requests redraw throughout the authored
-            // flash window, even with no input. Reuse the one projection owner
-            // only in these windows; ordinary idle ticks do not enumerate cameos.
-            let flashing = state
-                .match_state
-                .sim_runtime
-                .as_ref()
-                .is_some_and(|runtime| {
-                    state
-                        .match_state
-                        .match_presentation
-                        .sidebar_projection
-                        .cameo_redraw_requested(runtime.simulation.session().binary_frame() as i32)
-                });
-            // StripDraw6A9540 asks each entry's availability and reads its
-            // Factory while drawing, so the drawn state follows the simulation
-            // even when no pass, input or flash window rebuilt the projection
-            // this frame.
-            if recheck || flashing {
-                // The rebuilt view takes the same drawn state.
-                crate::app::presentation::sidebar_render::refresh_sidebar_projection(state);
-            } else {
-                crate::app::presentation::sidebar_render::refresh_sidebar_cameo_draw_state(state);
-            }
-        }
         if frame_committed && decision.admitted_by_pacer {
             let RuntimeAdvanceMode::WallClock { now_ms } = mode else {
                 unreachable!("only wall-clock admission records the frame pacer");

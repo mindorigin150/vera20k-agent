@@ -43,8 +43,50 @@ pub(crate) fn counter_credits(sim: &crate::sim::world::Simulation, owner: &str) 
     production::credits_for_owner(sim, owner).max(0)
 }
 
+/// Advance the retained sidebar after an admitted client or offscreen frame.
+pub(crate) fn advance_sidebar_after_frame(
+    state: &mut AppState,
+    frame_committed: bool,
+    tick_lane: crate::sim::world::TickLane,
+) {
+    advance_sidebar_credits_after_frame(state, frame_committed, tick_lane);
+    if frame_committed {
+        // House4F92E2's strip pass reaches this frame as a pending
+        // recheck; membership must not wait for the next player input.
+        let recheck = state
+            .match_state
+            .match_presentation
+            .sidebar_projection
+            .cameo_recheck_pending();
+        // Native Strip AI6A8CF3 requests redraw throughout the authored
+        // flash window, even with no input. Reuse the one projection owner
+        // only in these windows; ordinary idle ticks do not enumerate cameos.
+        let flashing = state
+            .match_state
+            .sim_runtime
+            .as_ref()
+            .is_some_and(|runtime| {
+                state
+                    .match_state
+                    .match_presentation
+                    .sidebar_projection
+                    .cameo_redraw_requested(runtime.simulation.session().binary_frame() as i32)
+            });
+        // StripDraw6A9540 asks each entry's availability and reads its
+        // Factory while drawing, so the drawn state follows the simulation
+        // even when no pass, input or flash window rebuilt the projection
+        // this frame.
+        if recheck || flashing {
+            // The rebuilt view takes the same drawn state.
+            refresh_sidebar_projection(state);
+        } else {
+            refresh_sidebar_cameo_draw_state(state);
+        }
+    }
+}
+
 /// Advance the displayed balance at the authoritative gameplay-frame seam.
-pub(crate) fn advance_sidebar_credits_after_frame(
+fn advance_sidebar_credits_after_frame(
     state: &mut AppState,
     frame_committed: bool,
     tick_lane: crate::sim::world::TickLane,
